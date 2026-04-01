@@ -278,10 +278,6 @@ Contributions are welcome! Please ensure:
 - Tests pass: `mvn test`
 - New features include appropriate documentation
 
-## License
-
-This project is part of the JAI (Java AI Integration) framework.
-
 ## Contact & Support
 
 For issues, questions, or contributions, please open an issue in the repository.
