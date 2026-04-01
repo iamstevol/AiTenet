@@ -12,7 +12,7 @@ public class ChatService {
 
     private final List<ModelEngine> modelEngines;
 
-    public String processChat(String message, String sessionId, String model) throws Exception {
+    public String processChat(String message, String sessionId, String model) {
 
         if (model == null || model.isEmpty()) {
             return findEngine("ollama").chat(message, sessionId);

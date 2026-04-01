@@ -4,7 +4,9 @@ import com.example.jai.service.ChatMemoryService;
 import com.example.jai.service.ModelEngine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.BufferedReader;
@@ -28,50 +30,54 @@ public class OllamaEngine implements ModelEngine {
         return "ollama".equalsIgnoreCase(modelName);
     }
 
-    public String chat(String prompt, String sessionId) throws Exception {
+    public String chat(String prompt, String sessionId)  {
 
-        chatMemoryService.saveMessage(sessionId, "USER: " + prompt);
+        try {
+            chatMemoryService.saveMessage(sessionId, "USER: " + prompt);
 
-        List<String> history = chatMemoryService.getMessages(sessionId);
-        log.info("Chat history for session {}: {}", sessionId, history);
+            List<String> history = chatMemoryService.getMessages(sessionId);
+            log.info("Chat history for session {}: {}", sessionId, history);
 
-        StringBuilder promptBuilder = new StringBuilder();
+            StringBuilder promptBuilder = new StringBuilder();
 
-        for (String msg : history) {
-            promptBuilder.append(msg).append("\n");
+            for (String msg : history) {
+                promptBuilder.append(msg).append("\n");
+            }
+
+            promptBuilder.append("AI:");
+
+            String finalPrompt = promptBuilder.toString();
+            log.info("Final prompt: " + finalPrompt);
+
+            URL url = new URL("http://localhost:11434/api/generate");
+
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> payload = Map.of(
+                    "model", "llama3",
+                    "prompt", finalPrompt,
+                    "stream", false
+            );
+
+            String body = mapper.writeValueAsString(payload);
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(body.getBytes());
+            }
+
+            BufferedReader br = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream())
+            );
+
+            String response = br.lines().collect(Collectors.joining());
+            chatMemoryService.saveMessage(sessionId, "AI: " + response);
+            return response;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Error communicating with Ollama: " + e.getMessage());
         }
-
-        promptBuilder.append("AI:");
-
-        String finalPrompt = promptBuilder.toString();
-        log.info("Final prompt: " + finalPrompt);
-
-        URL url = new URL("http://localhost:11434/api/generate");
-
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setDoOutput(true);
-
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String, Object> payload = Map.of(
-                "model", "llama3",
-                "prompt", finalPrompt,
-                "stream", false
-        );
-
-        String body = mapper.writeValueAsString(payload);
-
-        try(OutputStream os = conn.getOutputStream()) {
-            os.write(body.getBytes());
-        }
-
-        BufferedReader br = new BufferedReader(
-                new InputStreamReader(conn.getInputStream())
-        );
-
-        String response = br.lines().collect(Collectors.joining());
-        chatMemoryService.saveMessage(sessionId, "AI: " + response);
-        return response;
     }
 }
