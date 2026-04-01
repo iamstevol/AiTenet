@@ -1,0 +1,11 @@
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6371
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+
+server:
+  port: 8061
