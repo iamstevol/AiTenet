@@ -40,6 +40,53 @@ A Spring Boot application that provides a unified interface for interacting with
 
 ## Installation
 
+### Setting up Ollama
+
+Ollama is required to use the local model engine. Follow these steps to install and run Ollama:
+
+1. **Download Ollama**:
+   - Visit [ollama.ai](https://ollama.ai) and download the installer for your operating system
+   - macOS, Linux, and Windows are supported
+
+2. **Install Ollama**:
+   ```bash
+   # macOS
+   # Run the downloaded .dmg file and follow the installation wizard
+   
+   # Linux
+   # Download and run the installation script
+   curl https://ollama.ai/install.sh | sh
+   
+   # Windows
+   # Run the downloaded .exe installer
+   ```
+
+3. **Start Ollama Server**:
+   ```bash
+   ollama serve
+   ```
+   The server will start on `http://localhost:11434` by default
+
+4. **Pull and Run a Model** (in a new terminal):
+   ```bash
+   # Pull Llama 3 model
+   ollama pull llama3
+   
+   # Verify the model is installed
+   ollama list
+   ```
+   
+   The first pull may take a few minutes as it downloads the model (~4-13GB depending on version)
+
+5. **Test Ollama** (optional):
+   ```bash
+   ollama run llama3
+   # Type your prompt and press Enter
+   # Type /bye to exit
+   ```
+
+### Setting up the JAI Application
+
 1. Clone the repository:
 ```bash
 git clone <repository-url>
@@ -53,6 +100,7 @@ mvn clean install
 
 3. Set up Redis:
     - Ensure Redis is running on `localhost:6371` (or configure in `application.yaml`)
+    - You can start Redis with: `redis-server --port 6371`
 
 4. Configure environment variables:
 ```bash
@@ -200,13 +248,19 @@ public class NewModelEngine implements ModelEngine {
 - Verify Redis is running: `redis-cli ping`
 - Check Redis port in `application.yaml` matches your setup
 
+### Ollama Connection Issues
+- Ensure Ollama server is running: `ollama serve` (in a terminal)
+- Verify Ollama is accessible: `curl http://localhost:11434`
+- Check that a model is installed: `ollama list`
+  - If no models are listed, pull one: `ollama pull llama3`
+- Verify the endpoint configuration in `OllamaEngine.java` (should be `http://localhost:11434`)
+- Check Ollama logs for errors
+- Try manually testing with Ollama: `ollama run llama3`
+
 ### OpenAI API Errors
 - Verify `OPENAI_API_KEY` environment variable is set
 - Check API key is valid in OpenAI dashboard
-
-### Ollama Connection Issues
-- Ensure Ollama server is running and accessible
-- Verify the endpoint configuration in `OllamaEngine.java`
+- Ensure you have available credits/quota on your OpenAI account
 
 ## Future Enhancements
 
